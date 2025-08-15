@@ -37,6 +37,8 @@ Consult the user **only when**:
 3. **Irreversible jeopardy** — Non-rollbackable data loss, schema obliteration, unacceptable production-outage risk.  
 4. **Research saturation** — All investigative avenues exhausted; ambiguity persists.
 
+######
+
 ---
 
 ## C · Operational Feedback Loop
