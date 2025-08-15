@@ -1,0 +1,68 @@
+name: iOS CI
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*.*.*' ]
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TZ: UTC
+  RUN_TIMEOUT_SECONDS: '5400'
+  WORKDIR: ios-app
+
+jobs:
+  build-test:
+    runs-on: macos-14
+    permissions:
+      contents: read
+      actions: read
+      checks: write
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '15.4'
+
+      - name: Install tools (XcodeGen, SwiftLint/SwiftFormat, xcpretty)
+        run: |
+          brew install xcodegen swiftlint swiftformat || true
+          sudo gem install xcpretty -N
+
+      - name: Ensure exec wrapper
+        run: chmod +x scripts/exec.sh
+
+      - name: Generate Xcode project with XcodeGen
+        run: |
+          cd "$WORKDIR"
+          xcodegen generate
+
+      - name: Lint (best-effort)
+        run: |
+          source "$GITHUB_WORKSPACE/scripts/exec.sh"
+          cd "$WORKDIR"
+          if command -v swiftlint >/dev/null 2>&1; then run swiftlint swiftlint --strict; fi
+          if command -v swiftformat >/dev/null 2>&1; then run swiftformat swiftformat --lint .; fi
+
+      - name: Build & Test
+        run: |
+          source "$GITHUB_WORKSPACE/scripts/exec.sh"
+          cd "$WORKDIR"
+          run xcodebuild xcodebuild             -project CoreApp.xcodeproj             -scheme CoreApp             -sdk iphonesimulator             -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5'             -configuration Debug             clean test | xcpretty
+
+      - name: Upload artifacts (logs + test reports)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-logs
+          path: |
+            logs/**

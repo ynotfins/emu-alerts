@@ -1,0 +1,42 @@
+# Build / derived
+build/
+app/build/
+*.ipa
+*.aab
+*.apk
+DerivedData/
+build_ios/
+xcuserdata/
+*.xcworkspace/
+Pods/
+
+# Logs & artifacts
+logs/
+*.log
+*.xcresult
+
+# Secrets / signing
+play.json
+android_keystore/
+asc/
+*.p12
+*.mobileprovision
+*.keystore
+*.jks
+GoogleService-Info.plist
+google-services.json
+
+# Node / misc (if present)
+node_modules/
+link.env
+.env
+*.jks
+*.p8
+*.keystore
+GoogleService-Info.plist
+android-app/app/google-services.json
+ 
+# Expo mobile app
+apps/mobile-expo/.env
+apps/mobile-expo/android/
+apps/mobile-expo/ios/

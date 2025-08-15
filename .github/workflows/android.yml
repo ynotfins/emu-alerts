@@ -1,0 +1,99 @@
+name: Android CI
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*.*.*' ]
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TZ: UTC
+  JAVA_VERSION: '17'
+  ANDROID_SDK_PACKAGES: 'platform-tools;platforms;android-34;build-tools;34.0.0'
+  RUN_TIMEOUT_SECONDS: '3600'
+  WORKDIR: android-app
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      checks: write
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Install Android SDK (cmdline-tools)
+        uses: android-actions/setup-android@v3
+
+      - name: Accept licenses & install packages
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager $ANDROID_SDK_PACKAGES
+
+      - name: Generate Gradle Wrapper (no wrapper committed)
+        run: |
+          curl -s "https://get.sdkman.io" | bash
+          source "$HOME/.sdkman/bin/sdkman-init.sh"
+          sdk install gradle 8.7
+          cd $WORKDIR
+          gradle wrapper --gradle-version 8.7
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Ensure exec wrapper
+        run: chmod +x scripts/exec.sh
+
+      - name: Lint (Android Lint; Detekt/ktlint if configured)
+        shell: bash
+        run: |
+          source "$GITHUB_WORKSPACE/scripts/exec.sh"
+          cd "$WORKDIR"
+          TASKS="$(./gradlew tasks --all --console=plain -q || true)"
+          EXTRA=""
+          echo "$TASKS" | grep -q -E '^\s*detekt\b' && EXTRA="$EXTRA detekt"
+          echo "$TASKS" | grep -q -E '\bktlintCheck\b' && EXTRA="$EXTRA ktlintCheck"
+          run lint ./gradlew --no-daemon lint $EXTRA
+
+      - name: Unit tests
+        run: |
+          source "$GITHUB_WORKSPACE/scripts/exec.sh"
+          cd "$WORKDIR"
+          run test ./gradlew --no-daemon testDebugUnitTest
+
+      - name: Assemble Debug
+        run: |
+          source "$GITHUB_WORKSPACE/scripts/exec.sh"
+          cd "$WORKDIR"
+          run assemble ./gradlew --no-daemon :app:assembleDebug
+
+      - name: Upload artifacts (APKs + logs + reports)
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-and-logs
+          path: |
+            android-app/app/build/outputs/**/*.apk
+            android-app/app/build/outputs/**/*.aab
+            android-app/app/build/reports/**
+            logs/**
