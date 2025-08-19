@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "🔍 pre-commit: scanning staged files…"
+
+bad_regex='^(android-app/.*/build/|android-app/app/build/|\.idea/|\.gradle/|.*\.iml$|android-app/local\.properties$|android-app/app/google-services\.json$)'
+
+staged="$(git diff --cached --name-only)"
+violations=()
+
+while IFS= read -r f; do
+  [[ -z "$f" ]] && continue
+  if [[ "$f" =~ $bad_regex ]]; then
+    violations+=("$f")
+  fi
+done <<< "$staged"
+
+if (( ${#violations[@]} )); then
+  echo "❌ Blocked commit – remove these from staging:"
+  printf '  - %s\n' "${violations[@]}"
+  echo "Fix:"
+  echo "  git restore --staged <file>"
+  echo "  add pattern to .gitignore"
+  exit 1
+fi
+
+# Optional fast checks (keep commented to avoid slowing every commit)
+# ./gradlew -p android-app -q ktlintCheck detekt --no-daemon || {
+#   echo '❌ Quality checks failed. Try: ./gradlew -p android-app ktlintFormat'
+#   exit 1
+# }
+
+echo "✅ pre-commit checks passed"
+
+
