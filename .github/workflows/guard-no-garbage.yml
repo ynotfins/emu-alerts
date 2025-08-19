@@ -1,0 +1,24 @@
+name: guard-no-garbage
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check for forbidden paths
+        run: |
+          set -e
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.sha }}"
+          files=$(git diff --name-only "$base" "$head")
+          echo "$files" | grep -E '^(android-app/.*/build/|android-app/app/build/|\.idea/|\.gradle/|.*\.iml$|android-app/local\.properties$|android-app/app/google-services\.json$)' && {
+            echo "❌ Forbidden files found above. Remove them from the PR."
+            exit 1
+          } || echo "✅ No forbidden files found."
+
+
