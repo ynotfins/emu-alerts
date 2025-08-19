@@ -42,7 +42,10 @@ jobs:
 
       - name: Accept SDK licenses
         shell: bash
-        run: yes | sdkmanager --licenses
+        run: |
+          # Avoid failing when `yes` gets SIGPIPE after sdkmanager exits
+          set +o pipefail
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
 
       - name: Install required SDK packages
         shell: bash
