@@ -4,11 +4,12 @@ plugins {
 }
 
 android {
-    namespace = "com.example.coreapp"
+    namespace = "com.emualerts"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.coreapp"
+        applicationId = "com.emualerts"
+        testApplicationId = "com.emualerts.test"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

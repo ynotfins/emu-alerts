@@ -1,4 +1,4 @@
-package com.example.coreapp
+package com.emualerts
 
 import android.os.Bundle
 import android.widget.TextView
@@ -11,3 +11,4 @@ class MainActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.helloText).text = "Hello CoreApp!"
     }
 }
+
