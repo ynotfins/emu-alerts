@@ -1,14 +1,18 @@
+# IDE / OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
 # Build / derived
 build/
 app/build/
-*.ipa
-*.aab
-*.apk
-DerivedData/
-build_ios/
-xcuserdata/
-*.xcworkspace/
-Pods/
+**/build/
+
+# Gradle / Android
+.gradle/
+local.properties
+android-app/app/google-services.json
 
 # Logs & artifacts
 logs/
@@ -26,17 +30,27 @@ asc/
 GoogleService-Info.plist
 google-services.json
 
-# Node / misc (if present)
+# Node / web
 node_modules/
+dist/
+coverage/
 link.env
 .env
-*.jks
 *.p8
-*.keystore
-GoogleService-Info.plist
-android-app/app/google-services.json
- 
+
+# iOS / Xcode
+DerivedData/
+build_ios/
+xcuserdata/
+*.xcworkspace/
+Pods/
+
 # Expo mobile app
 apps/mobile-expo/.env
 apps/mobile-expo/android/
 apps/mobile-expo/ios/
+
+# Binaries
+*.jar
+*.aab
+*.apk
