@@ -54,3 +54,4 @@ apps/mobile-expo/ios/
 *.jar
 *.aab
 *.apk
+emu-alerts/
