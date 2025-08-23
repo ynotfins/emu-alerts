@@ -1,0 +1,11 @@
+{
+    "security.workspace.trust.enabled": false,
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "shellcheck.enable": true,
+    "shellcheck.useWorkspaceRootAsCwd": true,
+    "shellcheck.run": "onType",
+    "files.associations": {
+        "*.gradle.kts": "kotlin",
+        "*.pro": "proguard"
+    }
+}

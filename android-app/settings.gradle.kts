@@ -14,5 +14,5 @@ dependencyResolutionManagement {
 	}
 }
 
-rootProject.name = "EMU Alerts"
+rootProject.name = "com.emualerts"
 include(":app")
