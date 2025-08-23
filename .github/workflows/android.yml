@@ -37,13 +37,22 @@ jobs:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
 
-      - name: Install Android SDK (cmdline-tools)
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Accept licenses & install packages
+      - name: Accept SDK licenses
+        shell: bash
         run: |
-          yes | sdkmanager --licenses
-          sdkmanager $ANDROID_SDK_PACKAGES
+          # Avoid failing when `yes` gets SIGPIPE after sdkmanager exits
+          set +o pipefail
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+
+      - name: Install required SDK packages
+        shell: bash
+        run: |
+          sdkmanager "platform-tools" \
+                     "platforms;android-34" \
+                     "build-tools;34.0.0"
 
       - name: Generate Gradle Wrapper (no wrapper committed)
         run: |
