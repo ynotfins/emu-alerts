@@ -1,6 +1,5 @@
-// Firebase configuration for web app (NPM/Module setup)
-// For NPM: npm install firebase
-// import { initializeApp } from 'firebase/app';
+// Firebase configuration for web app
+// Generated from Firebase Console > Project Settings > Config
 
 const firebaseConfig = {
   apiKey: "AIzaSyCWX4L4y4Qi--ooSiklKBtoXpEJQice6mQ",
@@ -11,10 +10,5 @@ const firebaseConfig = {
   appId: "1:841200945180:web:08e09744b8f5b0f14bb7d9"
 };
 
-// For legacy global usage (if needed)
+// Make config available globally for main.js
 window.FIREBASE_CONFIG = firebaseConfig;
-
-// For modern module usage
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = firebaseConfig;
-}
