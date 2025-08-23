@@ -25,6 +25,7 @@ asc/
 *.jks
 GoogleService-Info.plist
 google-services.json
+android-app/local.properties
 
 # Node / misc (if present)
 node_modules/
