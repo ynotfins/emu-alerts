@@ -4,9 +4,6 @@
 
     <!-- Common UI text -->
     <string name="empty_no_alerts">No alerts yet</string>
-    <string name="title_placeholder">Title</string>
-    <string name="message_placeholder">Message</string>
-    <string name="time_placeholder">Aug 16, 2025 9:12 PM</string>
 
     <!-- Menu -->
     <string name="menu_test_crash">Test Crash</string>

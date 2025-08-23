@@ -14,5 +14,5 @@ dependencyResolutionManagement {
 	}
 }
 
-rootProject.name = "CoreApp"
+rootProject.name = "com.emualerts"
 include(":app")
