@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import MapView, { Marker, Region } from 'react-native-maps';
-import { View, Pressable, Text, Linking } from 'react-native';
+import { Pressable, Text, Linking, Platform } from 'react-native';
 import { radius, spacing, colors } from '../theme/tokens';
 
 type Props = {
@@ -9,10 +9,16 @@ type Props = {
   title?: string;
 };
 
-const toAppleMapsUrl = (lat: number, lng: number, label?: string) => {
-  const q = encodeURIComponent(label ?? 'Incident');
-  return `https://maps.apple.com/?q=${q}&ll=${lat},${lng}`;
-};
+const openNavigation = (lat: number, lng: number) => {
+    const url = Platform.select({
+        ios: `https://maps.apple.com/?daddr=${lat},${lng}`,
+        android: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
+    });
+
+    if (url) {
+        Linking.openURL(url).catch(err => console.error('An error occurred', err));
+    }
+}
 
 export const MapHeader = memo(({ lat, lng, title }: Props) => {
   if (lat == null || lng == null) {
@@ -41,12 +47,10 @@ export const MapHeader = memo(({ lat, lng, title }: Props) => {
   };
 
   return (
-    <View style={{ height: 220, margin: spacing(2), borderRadius: radius.xl, overflow: 'hidden' }}>
+    <Pressable onPress={() => openNavigation(lat, lng)} style={{ height: 220, margin: spacing(2), borderRadius: radius.xl, overflow: 'hidden' }}>
       <MapView style={{ flex: 1 }} initialRegion={region} pointerEvents="none">
         <Marker coordinate={{ latitude: lat, longitude: lng }} title={title ?? 'Incident'} />
       </MapView>
-    </View>
+    </Pressable>
   );
 });
-
-
