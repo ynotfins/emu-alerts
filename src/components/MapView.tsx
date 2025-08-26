@@ -1,20 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Platform, Linking, TouchableOpacity } from 'react-native';
 
-// Conditionally import react-native-maps only for mobile platforms
-let MapView: any = null;
-let Marker: any = null;
-
-if (Platform.OS !== 'web') {
-  try {
-    const Maps = require('react-native-maps');
-    MapView = Maps.default;
-    Marker = Maps.Marker;
-  } catch (error) {
-    console.log('react-native-maps not available for web platform');
-  }
-}
-
 interface MapViewComponentProps {
   latitude?: number;
   longitude?: number;
@@ -22,21 +8,22 @@ interface MapViewComponentProps {
 }
 
 export default function MapViewComponent({ latitude, longitude, address }: MapViewComponentProps) {
-  // Web platform: Use Google Maps link or embed
-  if (Platform.OS === 'web') {
-    const openInGoogleMaps = () => {
-      let url = '';
-      if (typeof latitude === 'number' && typeof longitude === 'number') {
-        url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
-      } else if (address) {
-        url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
-      }
-      
-      if (url) {
-        Linking.openURL(url);
-      }
-    };
+  const openInGoogleMaps = () => {
+    let url = '';
+    if (typeof latitude === 'number' && typeof longitude === 'number') {
+      url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+    } else if (address) {
+      url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+    }
+    
+    if (url) {
+      Linking.openURL(url);
+    }
+  };
 
+  // For web and development, always show the Google Maps button
+  // For mobile production, this would be replaced with native maps
+  if (address || (typeof latitude === 'number' && typeof longitude === 'number')) {
     return (
       <View style={styles.webMapContainer}>
         <TouchableOpacity onPress={openInGoogleMaps} style={styles.mapButton}>
@@ -49,49 +36,15 @@ export default function MapViewComponent({ latitude, longitude, address }: MapVi
     );
   }
 
-  // Mobile platforms: Use react-native-maps
-  if (typeof latitude === 'number' && typeof longitude === 'number' && MapView && Marker) {
-    return (
-      <View style={styles.mapContainer}>
-        <MapView
-          style={styles.map}
-          initialRegion={{
-            latitude,
-            longitude,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          }}
-        >
-          <Marker
-            coordinate={{ latitude, longitude }}
-            title="Incident Location"
-            description={address || 'Emergency incident location'}
-          />
-        </MapView>
-      </View>
-    );
-  }
-
-  // Fallback for when no coordinates are available
+  // Fallback for when no location data is available
   return (
     <View style={styles.placeholderContainer}>
-      <Text style={styles.placeholderText}>
-        {address ? `Location: ${address}` : 'No location data available'}
-      </Text>
+      <Text style={styles.placeholderText}>No location data available</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  mapContainer: {
-    height: 200,
-    borderRadius: 8,
-    overflow: 'hidden',
-    marginVertical: 8,
-  },
-  map: {
-    flex: 1,
-  },
   webMapContainer: {
     marginVertical: 8,
   },
