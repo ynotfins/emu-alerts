@@ -1,0 +1,98 @@
+# fastlane/Fastfile
+default_platform(:android)
+
+# ---------- ANDROID ----------
+platform :android do
+  desc "Run unit tests + lint"
+  lane :test do
+    sh "bash -lc 'source scripts/exec.sh && run gradle_test ./gradlew --no-daemon testDebugUnitTest lint'"
+  end
+
+  desc "Beta upload to Play (requires secrets)"
+  lane :beta do
+    keystore_path = ENV["ANDROID_KEYSTORE_PATH"]
+    keystore_alias = ENV["ANDROID_KEY_ALIAS"]
+    storepass = ENV["ANDROID_KEYSTORE_PASSWORD"]
+    keypass = ENV["ANDROID_KEY_PASSWORD"]
+
+    gradle(
+      task: "bundle",
+      build_type: "Release",
+      properties: {
+        "android.injected.signing.store.file" => keystore_path,
+        "android.injected.signing.store.password" => storepass,
+        "android.injected.signing.key.alias" => keystore_alias,
+        "android.injected.signing.key.password" => keypass
+      }
+    )
+
+    aab_path = Dir["**/build/outputs/bundle/release/*.aab"].first
+    UI.user_error!("No AAB found") unless aab_path
+
+    upload_to_play_store(
+      json_key: ENV["SUPPLY_JSON_KEY"],
+      aab: aab_path,
+      track: "internal",
+      skip_upload_changelogs: false
+    )
+  end
+
+  desc "Promote to production"
+  lane :release do
+    supply(
+      json_key: ENV["SUPPLY_JSON_KEY"],
+      track: "production",
+      validate_only: false
+    )
+  end
+end
+
+# ---------- iOS ----------
+platform :ios do
+  before_all do
+    api_key_path = ENV["ASC_API_KEY_PATH"]
+    if api_key_path && File.exist?(api_key_path)
+      json = JSON.parse(File.read(api_key_path))
+      app_store_connect_api_key(
+        key_id: json["key_id"],
+        issuer_id: json["issuer_id"],
+        key_content: json["key"],
+        is_key_content_base64: false,
+        in_house: false
+      )
+    end
+  end
+
+  desc "Build & test"
+  lane :test do
+    sh "bash -lc 'source scripts/exec.sh && run xcode_test xcodebuild -project ios-app/CoreApp.xcodeproj -scheme CoreApp -sdk iphonesimulator -destination "platform=iOS Simulator,name=iPhone 15,OS=17.5" clean test | xcpretty'"
+  end
+
+  desc "Beta to TestFlight"
+  lane :beta do
+    build_app(
+      project: "ios-app/CoreApp.xcodeproj",
+      scheme: "CoreApp",
+      export_method: "app-store",
+      output_directory: "build_ios",
+      include_bitcode: false
+    )
+    upload_to_testflight
+  end
+
+  desc "Release to App Store"
+  lane :release do
+    build_app(
+      project: "ios-app/CoreApp.xcodeproj",
+      scheme: "CoreApp",
+      export_method: "app-store",
+      output_directory: "build_ios",
+      include_bitcode: false
+    )
+    deliver(
+      submit_for_review: true,
+      force: true,
+      automatic_release: false
+    )
+  end
+end

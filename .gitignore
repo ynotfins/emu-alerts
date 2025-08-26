@@ -10,56 +10,98 @@ dist/
 dist-web/
 web-build/
 
-# Native
+# Native mobile
 *.orig.*
 *.jks
 *.p8
 *.p12
 *.key
 *.mobileprovision
+*.keystore
 
 # Metro
 .metro-health-check*
 
-# debug
+# Build / derived
+build/
+app/build/
+**/build/
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+
+# Gradle / Android
+.gradle/
+local.properties
+android-app/app/google-services.json
+android-app/local.properties
+
+# iOS / Xcode
+DerivedData/
+build_ios/
+xcuserdata/
+*.xcworkspace/
+ios/build/
+ios/Pods/
+ios/*.xcworkspace
+ios/*.xcuserdata
+Pods/
+
+# Firebase & Secrets
+.firebase/
+GoogleService-Info.plist
+google-services.json
+play.json
+android_keystore/
+asc/
+
+# Logs & artifacts
+logs/
+*.log
+*.xcresult
 npm-debug.*
 yarn-debug.*
 yarn-error.*
 
-# macOS
+# IDE / OS
+.idea/
+*.iml
+.vscode/
 .DS_Store
-*.pem
+*.swp
+*.swo
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# local env files
+# Environment files
+.env
+.env.test
+.env.production
 .env*.local
+link.env
 
-# typescript
+# TypeScript
 *.tsbuildinfo
 
 # Build artifacts
 *.apk
 *.aab
 *.ipa
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Windows
-Thumbs.db
+*.jar
 
 # Temporary files
 *.tmp
 *.temp
+tmp/
+temp/
 
 # Package archives
 *.zip
 *.tar.gz
-
-# Log files
-*.log
 
 # Runtime data
 pids
@@ -88,9 +130,6 @@ build/Release
 # Dependency directories
 jspm_packages/
 
-# TypeScript cache
-*.tsbuildinfo
-
 # Optional npm cache directory
 .npm
 
@@ -105,11 +144,6 @@ jspm_packages/
 
 # Yarn Integrity file
 .yarn-integrity
-
-# dotenv environment variables file
-.env
-.env.test
-.env.production
 
 # parcel-bundler cache
 .cache
@@ -129,40 +163,12 @@ public
 .out
 .storybook-out
 
-# Temporary folders
-tmp/
-temp/
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# Firebase
-.firebase/
-
-# Android
-android/app/build/
-android/build/
-android/.gradle/
-android/local.properties
-
-# iOS
-ios/build/
-ios/Pods/
-ios/*.xcworkspace
-ios/*.xcuserdata
-
 # Flipper
 .flipper/
 
-# MacOS
+# macOS
 .DS_Store
+*.pem
 
 # Linux
 *~
@@ -172,3 +178,11 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
+
+# Expo mobile app
+apps/mobile-expo/.env
+apps/mobile-expo/android/
+apps/mobile-expo/ios/
+
+# Project specific
+emu-alerts/

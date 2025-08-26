@@ -1,0 +1,21 @@
+name: CoreApp
+options:
+  minimumXcodeGenVersion: 2.38.0
+targets:
+  CoreApp:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: Sources
+    info:
+      path: Info.plist
+      properties:
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.example.coreapp
+      SWIFT_VERSION: 5.9
+      CODE_SIGN_STYLE: Automatic
+    scheme:
+      testTargets: []

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Core Alerts</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; padding: 1rem; }
+    header { display:flex; justify-content: space-between; align-items:center; margin-bottom:1rem; }
+    button { padding: 0.5rem 0.75rem; }
+    ul { list-style: none; padding: 0; margin: 0; }
+    li { padding: 0.5rem 0.25rem; border-bottom: 1px solid #eee; display:flex; justify-content: space-between; gap: 0.5rem; }
+    .item { display:flex; flex-direction: column; }
+    .ts { color: #666; font-size: 0.9rem; }
+    .msg { font-size: 1rem; }
+    .map { white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <header>
+    <div><strong>Core Alerts</strong> <span id="roleTag"></span></div>
+    <div>
+      <button id="signin">Sign in with Google</button>
+      <button id="signout" style="display:none">Sign out</button>
+    </div>
+  </header>
+
+  <section id="status">Not signed in.</section>
+  <ul id="list"></ul>
+
+  <script src="./firebase-config.js"></script>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

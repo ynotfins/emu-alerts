@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Soft circular backdrop -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.10"
+        android:pathData="M54,12a42,42 0 1,0 0,84a42,42 0 1,0 0,-84z"/>
+
+    <!-- Hydrant top cap -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42,30h24a3,3 0 0,1 3,3v6h-30v-6a3,3 0 0,1 3,-3z"/>
+
+    <!-- Hydrant neck -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M44,39h20v7h-20z"/>
+
+    <!-- Main barrel -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M36,46h36v28h-36z"/>
+
+    <!-- Flanges -->
+    <path android:fillColor="#FFFFFF" android:pathData="M26,54h12v12h-12z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M70,54h12v12h-12z"/>
+
+    <!-- Base plate -->
+    <path android:fillColor="#FFFFFF" android:pathData="M34,76h40v8h-40z"/>
+
+    <!-- Center nut (accent) -->
+    <path android:fillColor="#FFCDD2" android:pathData="M51,58h6v6h-6z"/>
+
+    <!-- Vertical bolts (subtle detail) -->
+    <path android:fillColor="#EDEDED" android:pathData="M40,48h2v24h-2z"/>
+    <path android:fillColor="#EDEDED" android:pathData="M66,48h2v24h-2z"/>
+</vector>
+
