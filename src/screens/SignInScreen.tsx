@@ -1,16 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert as ReactAlert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../firebase/config';
+import { useAuth } from '../hooks/useAuth';
 
 interface SignInScreenProps {
   navigation: any;
@@ -19,46 +17,29 @@ interface SignInScreenProps {
 export default function SignInScreen({ navigation }: SignInScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const { user, isLoading, error, signIn, clearError } = useAuth();
 
   useEffect(() => {
-    // Check if user is already signed in (like Android's onCreate check)
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        navigation.replace('Main');
-      }
-    });
-
-    return unsubscribe;
-  }, [navigation]);
-
-  const handleSignIn = async () => {
-    const trimmedEmail = email.trim();
-    const trimmedPassword = password.trim();
-
-    if (!trimmedEmail || !trimmedPassword) {
-      setErrorMessage('Invalid email or password');
-      return;
+    // Check if user is already signed in
+    if (user) {
+      navigation.replace('Main');
     }
+  }, [user, navigation]);
 
-    setIsLoading(true);
-    setErrorMessage('');
+  const handleSignIn = useCallback(async () => {
+    clearError();
+    await signIn(email, password);
+  }, [email, password, signIn, clearError]);
 
-    try {
-      await signInWithEmailAndPassword(auth, trimmedEmail, trimmedPassword);
-      // Navigation happens automatically via onAuthStateChanged
-    } catch (error: any) {
-      setIsLoading(false);
-      
-      // Handle specific Firebase errors (like Android's FirebaseNetworkException)
-      if (error.code === 'auth/network-request-failed') {
-        setErrorMessage('Network error. Please try again.');
-      } else {
-        setErrorMessage('Invalid email or password');
-      }
-    }
-  };
+  const handleEmailChange = useCallback((text: string) => {
+    setEmail(text);
+    if (error) clearError();
+  }, [error, clearError]);
+
+  const handlePasswordChange = useCallback((text: string) => {
+    setPassword(text);
+    if (error) clearError();
+  }, [error, clearError]);
 
   return (
     <KeyboardAvoidingView 
@@ -73,10 +54,11 @@ export default function SignInScreen({ navigation }: SignInScreenProps) {
             style={styles.input}
             placeholder="Email"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={handleEmailChange}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
+            editable={!isLoading}
           />
         </View>
 
@@ -85,9 +67,10 @@ export default function SignInScreen({ navigation }: SignInScreenProps) {
             style={styles.input}
             placeholder="Password"
             value={password}
-            onChangeText={setPassword}
+            onChangeText={handlePasswordChange}
             secureTextEntry
             autoCorrect={false}
+            editable={!isLoading}
           />
         </View>
 
@@ -101,8 +84,8 @@ export default function SignInScreen({ navigation }: SignInScreenProps) {
           </Text>
         </TouchableOpacity>
 
-        {errorMessage ? (
-          <Text style={styles.errorText}>{errorMessage}</Text>
+        {error ? (
+          <Text style={styles.errorText}>{error}</Text>
         ) : null}
       </View>
     </KeyboardAvoidingView>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,149 +6,88 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert as ReactAlert,
+  RefreshControl,
 } from 'react-native';
-import { 
-  collection, 
-  query, 
-  orderBy, 
-  limit, 
-  onSnapshot,
-  Unsubscribe 
-} from 'firebase/firestore';
-import { signOut } from 'firebase/auth';
-import { firestore, auth } from '../firebase/config';
 import { Alert } from '../types/Alert';
 import AlertItem from '../components/AlertItem';
+import AlertFilters from '../components/AlertFilters';
+import { useAlerts } from '../hooks/useAlerts';
+import { useAuth } from '../hooks/useAuth';
 
 interface MainScreenProps {
   navigation: any;
 }
 
 export default function MainScreen({ navigation }: MainScreenProps) {
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { alerts, isLoading, error, refreshAlerts } = useAlerts();
+  const { signOut } = useAuth();
+  const [filteredAlerts, setFilteredAlerts] = useState<Alert[]>([]);
 
+  // Update filtered alerts when base alerts change
   useEffect(() => {
-    let unsubscribe: Unsubscribe | null = null;
+    if (filteredAlerts.length === 0 || !filteredAlerts.some(fa => alerts.some(a => a.id === fa.id))) {
+      setFilteredAlerts(alerts);
+    }
+  }, [alerts, filteredAlerts]);
 
-    // Set up real-time listener (like Android's onStart)
-    const setupFirestoreListener = () => {
-      const alertsQuery = query(
-        collection(firestore, 'alerts'),
-        orderBy('ts', 'desc'),
-        limit(200)
-      );
-
-      unsubscribe = onSnapshot(
-        alertsQuery,
-        (snapshot) => {
-          console.log(`Got snapshot with ${snapshot.docs.length} documents`);
-          
-          // STEP 1: Parse ALL documents using rawText logic (exactly like Android)
-          const allParsedAlerts: Alert[] = [];
-          
-          snapshot.forEach((doc) => {
-            const data = doc.data();
-            const id = data.incidentId;
-            const rawText = data.rawText;
-            const timestamp = data.ts?.toDate()?.getTime() || Date.now();
-
-            if (!id || !rawText) return;
-
-            const parts = rawText.split('|').map((part: string) => part.trim());
-            let state = parts[0] || '';
-            if (state.startsWith('U/D')) {
-              state = state.replace('U/D', '').trim();
-            }
-            const county = parts[1] || '';
-            const city = parts[2] || '';
-            const type = parts[3] || '';
-            const message = parts.slice(4).join(' | ');
-
-            const title = [state, county, city, type]
-              .filter(part => part.length > 0)
-              .join(' | ');
-
-            allParsedAlerts.push({
-              id,
-              title,
-              message,
-              timestamp,
-            });
-          });
-
-          // STEP 2: Group by incidentId
-          const groupedAlerts = allParsedAlerts.reduce((groups, alert) => {
-            if (!groups[alert.id]) {
-              groups[alert.id] = [];
-            }
-            groups[alert.id].push(alert);
-            return groups;
-          }, {} as Record<string, Alert[]>);
-
-          // STEP 3: Get most recent from each group
-          const latestAlerts: Alert[] = Object.values(groupedAlerts).map(group => 
-            group.reduce((latest, current) => 
-              current.timestamp > latest.timestamp ? current : latest
-            )
-          );
-
-          // STEP 4: Update UI
-          setAlerts(latestAlerts);
-          setIsLoading(false);
-        },
-        (error) => {
-          console.error('Error fetching alerts:', error);
-          setIsLoading(false);
-        }
-      );
-    };
-
-    setupFirestoreListener();
-
-    // Cleanup function (like Android's onStop)
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
+  const handleFilteredAlertsChange = useCallback((newFilteredAlerts: Alert[]) => {
+    setFilteredAlerts(newFilteredAlerts);
   }, []);
 
-  const handleAlertPress = (alert: Alert) => {
+  const handleAlertPress = useCallback((alert: Alert) => {
     // Show toast-like alert (like Android's Toast.makeText)
     ReactAlert.alert('Opening Incident', `Opening #${alert.id}`);
     
     // Navigate to details screen
     navigation.navigate('AlertDetails', { incidentId: alert.id });
-  };
+  }, [navigation]);
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     try {
-      await signOut(auth);
+      await signOut();
       navigation.replace('SignIn');
     } catch (error) {
       console.error('Sign out error:', error);
+      ReactAlert.alert('Error', 'Failed to sign out. Please try again.');
     }
-  };
+  }, [signOut, navigation]);
 
-  const handleTestCrash = () => {
+  const handleTestCrash = useCallback(() => {
     // Test crash functionality (like Android menu action)
     ReactAlert.alert(
       'Test Crash',
       'This would trigger a test crash in production',
       [{ text: 'OK' }]
     );
-  };
+  }, []);
 
-  const renderAlert = ({ item }: { item: Alert }) => (
+  const renderAlert = useCallback(({ item }: { item: Alert }) => (
     <AlertItem alert={item} onPress={handleAlertPress} />
-  );
+  ), [handleAlertPress]);
 
-  const renderEmptyState = () => (
+  const renderEmptyState = useMemo(() => (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>No alerts yet</Text>
+      <Text style={styles.emptyText}>
+        {error ? 'Failed to load alerts' : 'No alerts yet'}
+      </Text>
+      {error && (
+        <TouchableOpacity onPress={refreshAlerts} style={styles.retryButton}>
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      )}
     </View>
-  );
+  ), [error, refreshAlerts]);
+
+  const keyExtractor = useCallback((item: Alert) => item.id, []);
+
+  const refreshControl = useMemo(() => (
+    <RefreshControl
+      refreshing={isLoading}
+      onRefresh={refreshAlerts}
+      tintColor="#1976d2"
+      colors={['#1976d2']}
+    />
+  ), [isLoading, refreshAlerts]);
 
   return (
     <View style={styles.container}>
@@ -165,14 +104,31 @@ export default function MainScreen({ navigation }: MainScreenProps) {
         </View>
       </View>
 
+      {/* Search and Filters */}
+      {alerts.length > 0 && (
+        <AlertFilters
+          alerts={alerts}
+          onFilteredAlertsChange={handleFilteredAlertsChange}
+        />
+      )}
+
       {/* Alerts List (like RecyclerView) */}
       <FlatList
-        data={alerts}
+        data={filteredAlerts}
         renderItem={renderAlert}
-        keyExtractor={(item) => item.id}
+        keyExtractor={keyExtractor}
         ListEmptyComponent={!isLoading ? renderEmptyState : null}
-        contentContainerStyle={alerts.length === 0 ? styles.emptyListContainer : styles.listContainer}
+        contentContainerStyle={filteredAlerts.length === 0 ? styles.emptyListContainer : styles.listContainer}
         showsVerticalScrollIndicator={true}
+        refreshControl={refreshControl}
+        maxToRenderPerBatch={10}
+        windowSize={10}
+        removeClippedSubviews={true}
+        getItemLayout={(data, index) => ({
+          length: 80, // Approximate item height
+          offset: 80 * index,
+          index,
+        })}
       />
     </View>
   );
@@ -227,5 +183,18 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: '#666',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#1976d2',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });

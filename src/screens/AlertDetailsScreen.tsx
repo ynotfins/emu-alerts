@@ -1,110 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
-import { 
-  doc, 
-  onSnapshot,
-  Unsubscribe 
-} from 'firebase/firestore';
-import { firestore } from '../firebase/config';
 import MapViewComponent from '../components/MapView';
+import LocationStatus from '../components/LocationStatus';
+import { useIncidentDetails, IncidentData } from '../hooks/useIncidentDetails';
 
 interface AlertDetailsScreenProps {
   navigation: any;
   route: any;
 }
 
-interface IncidentData {
-  state: string;
-  county: string;
-  city: string;
-  address: string;
-  lastType: string;
-  lastMessage: string;
-  lastTs: Date;
-  updateCount: number;
-}
-
 export default function AlertDetailsScreen({ navigation, route }: AlertDetailsScreenProps) {
   const { incidentId } = route.params;
-  const [incidentData, setIncidentData] = useState<IncidentData | null>(null);
-  const [hasData, setHasData] = useState(false);
+  const { incidentData, isLoading, error, hasData } = useIncidentDetails(incidentId);
 
-  useEffect(() => {
-    if (!incidentId) {
-      navigation.goBack();
-      return;
-    }
-
-    let unsubscribe: Unsubscribe | null = null;
-
-    // Set up real-time listener for incident details (like Android's onStart)
-    const setupListener = () => {
-      const incidentRef = doc(firestore, 'incidents', incidentId);
-      
-      unsubscribe = onSnapshot(
-        incidentRef,
-        (snapshot) => {
-          const hasValidData = snapshot.exists();
-          setHasData(hasValidData);
-          
-          if (!hasValidData) {
-            setIncidentData(null);
-            return;
-          }
-
-          const data = snapshot.data();
-          
-          const state = data.state || '';
-          const county = data.county || '';
-          const city = data.city || '';
-          const address = data.address || '';
-          const lastType = data.lastType || '';
-          const lastMessage = data.lastMessage || '';
-          const lastTs = (data.lastTs || data.firstSeenAt)?.toDate() || new Date();
-          const updateCount = data.updateCount || 0;
-
-          setIncidentData({
-            state,
-            county,
-            city,
-            address,
-            lastType,
-            lastMessage,
-            lastTs,
-            updateCount,
-          });
-        },
-        (error) => {
-          console.error('Error fetching incident details:', error);
-          setHasData(false);
-          setIncidentData(null);
-        }
-      );
-    };
-
-    setupListener();
-
-    // Cleanup function (like Android's onStop)
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
-  }, [incidentId, navigation]);
-
-  const formatHeaderLocation = (data: IncidentData): string => {
+  const formatHeaderLocation = useCallback((data: IncidentData): string => {
     return [data.state, data.county, data.city]
       .filter(part => part.length > 0)
       .join(' · ');
-  };
+  }, []);
 
-  const formatDateTime = (date: Date): string => {
+  const formatDateTime = useCallback((date: Date): string => {
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -113,19 +35,28 @@ export default function AlertDetailsScreen({ navigation, route }: AlertDetailsSc
       minute: '2-digit',
       hour12: true,
     });
-  };
+  }, []);
 
-  const formatUpdateCount = (count: number): string => {
+  const formatUpdateCount = useCallback((count: number): string => {
     return count === 1 ? '1 update' : `${count} updates`;
-  };
+  }, []);
 
-  const renderEmptyState = () => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>No incident data available</Text>
+  const renderLoadingState = useMemo(() => (
+    <View style={styles.loadingContainer}>
+      <ActivityIndicator size="large" color="#1976d2" />
+      <Text style={styles.loadingText}>Loading incident details...</Text>
     </View>
-  );
+  ), []);
 
-  const renderContent = (data: IncidentData) => (
+  const renderEmptyState = useMemo(() => (
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptyText}>
+        {error || 'No incident data available'}
+      </Text>
+    </View>
+  ), [error]);
+
+  const renderContent = useCallback((data: IncidentData) => (
     <View style={styles.content}>
       {/* Header line: State | County | City */}
       <Text style={styles.headerLocation}>
@@ -141,6 +72,13 @@ export default function AlertDetailsScreen({ navigation, route }: AlertDetailsSc
       {data.address ? (
         <Text style={styles.headerAddress}>{data.address}</Text>
       ) : null}
+
+      {/* Location Status */}
+      <LocationStatus 
+        incidentLatitude={undefined} // TODO: Add lat/lng fields to incident data
+        incidentLongitude={undefined}
+        showDistance={true}
+      />
 
       {/* Map View */}
       <MapViewComponent 
@@ -165,7 +103,7 @@ export default function AlertDetailsScreen({ navigation, route }: AlertDetailsSc
         </Text>
       </View>
     </View>
-  );
+  ), [formatHeaderLocation, formatDateTime, formatUpdateCount, incidentId]);
 
   return (
     <View style={styles.container}>
@@ -179,7 +117,9 @@ export default function AlertDetailsScreen({ navigation, route }: AlertDetailsSc
       </View>
 
       <ScrollView style={styles.scrollContainer}>
-        {hasData && incidentData ? renderContent(incidentData) : renderEmptyState()}
+        {isLoading ? renderLoadingState : (
+          hasData && incidentData ? renderContent(incidentData) : renderEmptyState
+        )}
       </ScrollView>
     </View>
   );
@@ -263,6 +203,18 @@ const styles = StyleSheet.create({
   updateCount: {
     fontSize: 14,
     color: '#666',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 12,
   },
   emptyContainer: {
     flex: 1,
