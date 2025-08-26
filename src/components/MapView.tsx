@@ -1,6 +1,19 @@
 import React from 'react';
 import { View, Text, StyleSheet, Platform, Linking, TouchableOpacity } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+
+// Conditionally import react-native-maps only for mobile platforms
+let MapView: any = null;
+let Marker: any = null;
+
+if (Platform.OS !== 'web') {
+  try {
+    const Maps = require('react-native-maps');
+    MapView = Maps.default;
+    Marker = Maps.Marker;
+  } catch (error) {
+    console.log('react-native-maps not available for web platform');
+  }
+}
 
 interface MapViewComponentProps {
   latitude?: number;
@@ -37,7 +50,7 @@ export default function MapViewComponent({ latitude, longitude, address }: MapVi
   }
 
   // Mobile platforms: Use react-native-maps
-  if (typeof latitude === 'number' && typeof longitude === 'number') {
+  if (typeof latitude === 'number' && typeof longitude === 'number' && MapView && Marker) {
     return (
       <View style={styles.mapContainer}>
         <MapView
