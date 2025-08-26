@@ -15,6 +15,8 @@ export interface IncidentData {
   lastMessage: string;
   lastTs: Date;
   updateCount: number;
+  lat?: number;
+  lng?: number;
 }
 
 interface UseIncidentDetailsReturn {
@@ -51,6 +53,8 @@ export function useIncidentDetails(incidentId: string | undefined): UseIncidentD
     const lastMessage = data.lastMessage || '';
     const lastTs = (data.lastTs || data.firstSeenAt)?.toDate() || new Date();
     const updateCount = data.updateCount || 0;
+    const lat = typeof data.lat === 'number' ? data.lat : undefined;
+    const lng = typeof data.lng === 'number' ? data.lng : undefined;
 
     setIncidentData({
       state,
@@ -61,6 +65,8 @@ export function useIncidentDetails(incidentId: string | undefined): UseIncidentD
       lastMessage,
       lastTs,
       updateCount,
+      lat,
+      lng,
     });
     setError(null);
   }, []);

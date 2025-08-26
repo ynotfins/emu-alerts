@@ -75,15 +75,15 @@ export default function AlertDetailsScreen({ navigation, route }: AlertDetailsSc
 
       {/* Location Status */}
       <LocationStatus 
-        incidentLatitude={undefined} // TODO: Add lat/lng fields to incident data
-        incidentLongitude={undefined}
+        incidentLatitude={data.lat}
+        incidentLongitude={data.lng}
         showDistance={true}
       />
 
       {/* Map View */}
       <MapViewComponent 
-        latitude={undefined} // TODO: Add lat/lng fields to incident data
-        longitude={undefined}
+        latitude={data.lat}
+        longitude={data.lng}
         address={data.address}
       />
 

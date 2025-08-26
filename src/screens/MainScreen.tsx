@@ -35,10 +35,7 @@ export default function MainScreen({ navigation }: MainScreenProps) {
   }, []);
 
   const handleAlertPress = useCallback((alert: Alert) => {
-    // Show toast-like alert (like Android's Toast.makeText)
-    ReactAlert.alert('Opening Incident', `Opening #${alert.id}`);
-    
-    // Navigate to details screen
+    // Navigate directly to details screen without popup
     navigation.navigate('AlertDetails', { incidentId: alert.id });
   }, [navigation]);
 

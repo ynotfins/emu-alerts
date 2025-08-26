@@ -22,32 +22,29 @@ export function useAlerts(): UseAlertsReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const parseRawTextToAlert = useCallback((doc: any): Alert | null => {
+  const parseFirestoreAlert = useCallback((doc: any): Alert | null => {
     const data = doc.data();
     const id = data.incidentId;
-    const rawText = data.rawText;
     const timestamp = data.ts?.toDate()?.getTime() || Date.now();
 
-    if (!id || !rawText) return null;
+    if (!id) return null;
 
-    const parts = rawText.split('|').map((part: string) => part.trim());
-    let state = parts[0] || '';
-    if (state.startsWith('U/D')) {
-      state = state.replace('U/D', '').trim();
-    }
-    const county = parts[1] || '';
-    const city = parts[2] || '';
-    const type = parts[3] || '';
-    const message = parts.slice(4).join(' | ');
+    // Use the properly parsed fields from Cloud Function instead of rawText
+    const state = data.state || '';
+    const county = data.county || '';
+    const city = data.city || '';
+    const alertType = data.alertType || '';
+    const alertMessage = data.alertMessage || '';
 
-    const title = [state, county, city, type]
-      .filter(part => part.length > 0)
-      .join(' | ');
+    // Create clean title from parsed fields
+    const title = [state, county, city, alertType]
+      .filter(part => part && part.length > 0)
+      .join(' · ');
 
     return {
       id,
-      title,
-      message,
+      title: title || 'Alert', // Fallback title if no location data
+      message: alertMessage || 'No message available',
       timestamp,
     };
   }, []);
@@ -55,11 +52,11 @@ export function useAlerts(): UseAlertsReturn {
   const processAlertsData = useCallback((snapshot: any) => {
     console.log(`Got snapshot with ${snapshot.docs.length} documents`);
     
-    // STEP 1: Parse ALL documents using rawText logic
+    // STEP 1: Parse ALL documents using proper Firestore fields
     const allParsedAlerts: Alert[] = [];
     
     snapshot.forEach((doc: any) => {
-      const alert = parseRawTextToAlert(doc);
+      const alert = parseFirestoreAlert(doc);
       if (alert) {
         allParsedAlerts.push(alert);
       }
@@ -84,7 +81,7 @@ export function useAlerts(): UseAlertsReturn {
     setAlerts(latestAlerts);
     setIsLoading(false);
     setError(null);
-  }, [parseRawTextToAlert]);
+  }, [parseFirestoreAlert]);
 
   const setupFirestoreListener = useCallback(() => {
     let unsubscribe: Unsubscribe | null = null;
