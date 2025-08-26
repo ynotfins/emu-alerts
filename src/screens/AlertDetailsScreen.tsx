@@ -12,6 +12,7 @@ import {
   Unsubscribe 
 } from 'firebase/firestore';
 import { firestore } from '../firebase/config';
+import MapViewComponent from '../components/MapView';
 
 interface AlertDetailsScreenProps {
   navigation: any;
@@ -140,6 +141,13 @@ export default function AlertDetailsScreen({ navigation, route }: AlertDetailsSc
       {data.address ? (
         <Text style={styles.headerAddress}>{data.address}</Text>
       ) : null}
+
+      {/* Map View */}
+      <MapViewComponent 
+        latitude={undefined} // TODO: Add lat/lng fields to incident data
+        longitude={undefined}
+        address={data.address}
+      />
 
       {/* Time */}
       <Text style={styles.headerTime}>

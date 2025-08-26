@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform, Linking, TouchableOpacity } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 
 interface MapViewComponentProps {
@@ -9,7 +9,34 @@ interface MapViewComponentProps {
 }
 
 export default function MapViewComponent({ latitude, longitude, address }: MapViewComponentProps) {
-  // If we have coordinates, show the map
+  // Web platform: Use Google Maps link or embed
+  if (Platform.OS === 'web') {
+    const openInGoogleMaps = () => {
+      let url = '';
+      if (typeof latitude === 'number' && typeof longitude === 'number') {
+        url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+      } else if (address) {
+        url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+      }
+      
+      if (url) {
+        Linking.openURL(url);
+      }
+    };
+
+    return (
+      <View style={styles.webMapContainer}>
+        <TouchableOpacity onPress={openInGoogleMaps} style={styles.mapButton}>
+          <Text style={styles.mapButtonText}>📍 Open in Google Maps</Text>
+          <Text style={styles.mapButtonSubtext}>
+            {address || `${latitude}, ${longitude}` || 'View location'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // Mobile platforms: Use react-native-maps
   if (typeof latitude === 'number' && typeof longitude === 'number') {
     return (
       <View style={styles.mapContainer}>
@@ -51,6 +78,29 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
+  },
+  webMapContainer: {
+    marginVertical: 8,
+  },
+  mapButton: {
+    backgroundColor: '#4285f4',
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#1976d2',
+  },
+  mapButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  mapButtonSubtext: {
+    fontSize: 14,
+    color: '#e3f2fd',
+    textAlign: 'center',
   },
   placeholderContainer: {
     height: 60,
