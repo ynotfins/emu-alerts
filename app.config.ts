@@ -17,6 +17,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.emualerts.expo',
+    config: {
+      googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
+    },
   },
   android: {
     adaptiveIcon: {
@@ -29,6 +32,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'ACCESS_FINE_LOCATION',
       'ACCESS_COARSE_LOCATION',
     ],
+    config: {
+      googleMaps: {
+        apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
+      },
+    },
   },
   web: {
     favicon: './assets/favicon.png',

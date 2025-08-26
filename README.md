@@ -26,14 +26,60 @@ emu-alerts/
 
 ## Setup
 
-1. **Firebase Project**
+### **1. Environment Variables**
+
+Create a `.env` file in the project root:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and add your API keys:
+```bash
+# Required: Google Maps API Key
+EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
+```
+
+### **2. Google Maps API Setup**
+
+1. **Get API Key from Google Cloud Console:**
+   - Visit: https://console.cloud.google.com/
+   - Create/select project
+   - Enable APIs:
+     - Maps SDK for Android
+     - Maps SDK for iOS
+     - Maps JavaScript API
+     - Geocoding API
+   - Create API Key in "Credentials"
+
+2. **Configure API Key Restrictions (Recommended):**
+   - **Android**: Restrict by package name `com.emualerts.expo`
+   - **iOS**: Restrict by bundle ID `com.emualerts.expo`
+   - **Web**: Restrict by HTTP referrers (your domain)
+
+### **3. Firebase Project**
 
 ```bash
 firebase login
 firebase use emu-incidents
 ```
 
-2. **Android App**
+### **4. Expo React Native App**
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm start
+
+# Run on specific platforms
+npm run web     # Web browser
+npm run android # Android emulator/device
+npm run ios     # iOS simulator (macOS only)
+```
+
+### **5. Android App (Legacy)**
 
 - Place `google-services.json` in `android-app/app/`
   - Package name must be `com.emualerts` to match `applicationId`
@@ -41,7 +87,7 @@ firebase use emu-incidents
 - File > Sync Project with Gradle Files
 - Build > Clean Project
 
-3. **Cloud Functions**
+### **6. Cloud Functions**
 
 ```bash
 cd functions
@@ -49,7 +95,7 @@ npm install
 npm run build
 ```
 
-4. **Environment Setup**
+### **7. Environment Setup**
 - link.env` (if it doesn't exist)
 - For local development, `X_INGEST_TOKEN` is in `link.env`
 - For production, token is stored as Firebase Functions secret
