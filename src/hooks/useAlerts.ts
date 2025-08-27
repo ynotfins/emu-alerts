@@ -22,73 +22,61 @@ export function useAlerts(): UseAlertsReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const parseFirestoreAlert = useCallback((doc: any): Alert | null => {
+  const parseAlertDocument = useCallback((doc: any): Alert | null => {
     const data = doc.data();
-    const id = data.incidentId;
-    const timestamp = data.ts?.toDate()?.getTime() || Date.now();
+    const id = data.alertId || doc.id; // Use alertId field or document ID
+    const timestamp = data.lastUpdatedAt?.toDate()?.getTime() || 
+                     data.createdAt?.toDate()?.getTime() || 
+                     Date.now();
 
     if (!id) return null;
 
-    // Use the properly parsed fields from Cloud Function instead of rawText
+    // Use the structured fields from the new Cloud Function
     const state = data.state || '';
     const county = data.county || '';
     const city = data.city || '';
     const alertType = data.alertType || '';
-    const alertMessage = data.alertMessage || '';
+    const title = data.title || ''; // Title from Macrodroid
+    const initialMessage = data.initialMessage || '';
 
-    // Create clean title from parsed fields
-    const title = [state, county, city, alertType]
+    // Create clean display title
+    const locationTitle = [state, county, city, alertType]
       .filter(part => part && part.length > 0)
       .join(' · ');
 
     return {
       id,
-      title: title || 'Alert', // Fallback title if no location data
-      message: alertMessage || 'No message available',
+      title: title || locationTitle || 'Alert', // Use Macrodroid title or location-based title
+      message: initialMessage || 'No message available',
       timestamp,
     };
   }, []);
 
   const processAlertsData = useCallback((snapshot: any) => {
-    console.log(`Got snapshot with ${snapshot.docs.length} documents`);
+    console.log(`Got snapshot with ${snapshot.docs.length} alert documents`);
     
-    // STEP 1: Parse ALL documents using proper Firestore fields
-    const allParsedAlerts: Alert[] = [];
+    // With the new structure, each document IS a unique alert - no grouping needed!
+    const alerts: Alert[] = [];
     
     snapshot.forEach((doc: any) => {
-      const alert = parseFirestoreAlert(doc);
+      const alert = parseAlertDocument(doc);
       if (alert) {
-        allParsedAlerts.push(alert);
+        alerts.push(alert);
       }
     });
 
-    // STEP 2: Group by incidentId and get most recent from each group
-    const groupedAlerts = allParsedAlerts.reduce((groups, alert) => {
-      if (!groups[alert.id]) {
-        groups[alert.id] = [];
-      }
-      groups[alert.id].push(alert);
-      return groups;
-    }, {} as Record<string, Alert[]>);
-
-    // STEP 3: Get most recent from each group
-    const latestAlerts: Alert[] = Object.values(groupedAlerts).map(group => 
-      group.reduce((latest, current) => 
-        current.timestamp > latest.timestamp ? current : latest
-      )
-    );
-
-    setAlerts(latestAlerts);
+    // Alerts are already sorted by lastUpdatedAt desc from the query
+    setAlerts(alerts);
     setIsLoading(false);
     setError(null);
-  }, [parseFirestoreAlert]);
+  }, [parseAlertDocument]);
 
   const setupFirestoreListener = useCallback(() => {
     let unsubscribe: Unsubscribe | null = null;
 
     const alertsQuery = query(
       collection(firestore, 'alerts'),
-      orderBy('ts', 'desc'),
+      orderBy('lastUpdatedAt', 'desc'),
       limit(200)
     );
 
