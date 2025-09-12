@@ -8,7 +8,12 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "build:web": "expo export --platform web",
-    "build:web-prod": "expo export --platform web --output-dir dist-web"
+    "build:web-prod": "expo export --platform web --output-dir dist-web",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint . --ext .ts,.tsx",
+    "test": "jest",
+    "clean": "rm -rf node_modules .expo dist-web",
+    "clean:cache": "expo start --clear"
   },
   "dependencies": {
     "@react-native-firebase/crashlytics": "^23.1.1",
