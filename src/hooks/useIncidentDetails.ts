@@ -7,7 +7,7 @@ import {
   onSnapshot,
   Unsubscribe 
 } from 'firebase/firestore';
-import { firestore } from '../firebase/config';
+import { firestore } from '../lib/firebase';
 
 export interface AlertMessage {
   id: string;
