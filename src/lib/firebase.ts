@@ -1,5 +1,6 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, initializeAuth, browserLocalPersistence } from "firebase/auth";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getFirestore } from "firebase/firestore";
 
 const config = {
@@ -15,8 +16,23 @@ const config = {
 // Avoid re-initializing during Fast Refresh
 const app = getApps().length ? getApps()[0] : initializeApp(config);
 
-// Use getAuth which automatically handles persistence based on platform
-const auth = getAuth(app);
+// Check if auth is already initialized to avoid re-initialization
+let auth;
+try {
+  auth = getAuth(app);
+} catch (error) {
+  // React Native vs Web persistence
+  const isReactNative = typeof navigator !== "undefined" && navigator.product === "ReactNative";
+  
+  // For React Native, we'll use the default persistence which Firebase handles automatically
+  // For Web, we explicitly set browserLocalPersistence
+  if (!isReactNative) {
+    auth = initializeAuth(app, { persistence: browserLocalPersistence });
+  } else {
+    // Firebase SDK v12+ handles React Native persistence automatically with AsyncStorage
+    auth = initializeAuth(app);
+  }
+}
 
 const firestore = getFirestore(app);
 
