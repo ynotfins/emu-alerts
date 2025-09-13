@@ -66,7 +66,44 @@ Edit `.env` and add your Google Maps API key:
 EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
 ```
 
-### 3️⃣ Get Google Maps API Key
+### 3️⃣ Firebase Linking
+
+This project is configured to work with the existing Firebase project `emu-incidents`. The Firebase configuration files are already included in the repository.
+
+**Install Firebase CLI (if not already installed):**
+```bash
+npm install -g firebase-tools
+```
+
+**Login to Firebase:**
+```bash
+firebase login
+```
+
+**Verify Project Connection:**
+```bash
+firebase projects:list
+# Should show "emu-incidents" as the current project
+```
+
+**Install Functions Dependencies:**
+```bash
+cd functions
+npm install
+npm run build  # Compile TypeScript functions
+cd ..
+```
+
+**Test Firebase Connection:**
+```bash
+# Start Firebase emulators for local development
+firebase emulators:start
+
+# Deploy security rules only (safe to test)
+firebase deploy --only firestore:rules
+```
+
+### 4️⃣ Get Google Maps API Key
 
 1. **Visit Google Cloud Console:** https://console.cloud.google.com/
 2. **Create/Select Project** 
@@ -78,7 +115,7 @@ EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
 4. **Create API Key** in "Credentials"
 5. **Add to .env file**
 
-### 4️⃣ Run the App
+### 5️⃣ Run the App
 
 ```bash
 # Start development server
