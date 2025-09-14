@@ -7,6 +7,8 @@ import { StatusBar } from 'expo-status-bar';
 import SignInScreen from './src/screens/SignInScreen';
 import MainScreen from './src/screens/MainScreen';
 import AlertDetailsScreen from './src/screens/AlertDetailsScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
+import HeaderMenu from './src/components/HeaderMenu';
 
 const Stack = createNativeStackNavigator();
 
@@ -14,15 +16,30 @@ export default function App() {
   return (
     <NavigationContainer>
       <StatusBar style="light" backgroundColor="#1976d2" />
-      <Stack.Navigator 
-        initialRouteName="SignIn"
-        screenOptions={{
-          headerShown: false, // We're implementing custom headers
-        }}
-      >
-        <Stack.Screen name="SignIn" component={SignInScreen} />
-        <Stack.Screen name="Main" component={MainScreen} />
-        <Stack.Screen name="AlertDetails" component={AlertDetailsScreen} />
+      <Stack.Navigator initialRouteName="SignIn">
+        <Stack.Screen 
+          name="SignIn" 
+          component={SignInScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen 
+          name="Main" 
+          component={MainScreen}
+          options={({ navigation }) => ({
+            title: "EMU Alerts",
+            headerRight: () => <HeaderMenu navigation={navigation} />
+          })}
+        />
+        <Stack.Screen 
+          name="AlertDetails" 
+          component={AlertDetailsScreen}
+          options={{ title: "Alert Details" }}
+        />
+        <Stack.Screen 
+          name="Settings" 
+          component={SettingsScreen}
+          options={{ title: "Settings" }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
