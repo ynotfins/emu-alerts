@@ -1,131 +1,122 @@
-import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   FlatList,
   StyleSheet,
   TouchableOpacity,
-  Alert as ReactAlert,
+  Alert,
   RefreshControl,
 } from 'react-native';
-import { Alert } from '../types/Alert';
-import AlertItem from '../components/AlertItem';
-import AlertFilters from '../components/AlertFilters';
-import { useAlerts } from '../hooks/useAlerts';
-import { useAuth } from '../hooks/useAuth';
+import HeaderMenu from '../components/HeaderMenu';
 
 interface MainScreenProps {
   navigation: any;
 }
 
+interface AlertItem {
+  id: string;
+  title: string;
+  description: string;
+  timestamp: string;
+  severity: 'high' | 'medium' | 'low';
+}
+
 export default function MainScreen({ navigation }: MainScreenProps) {
-  const { alerts, isLoading, error, refreshAlerts } = useAlerts();
-  const { signOut } = useAuth();
-  const [filteredAlerts, setFilteredAlerts] = useState<Alert[]>([]);
+  const [alerts, setAlerts] = useState<AlertItem[]>([
+    {
+      id: '1',
+      title: 'Emergency Alert',
+      description: 'This is a sample emergency alert',
+      timestamp: new Date().toLocaleString(),
+      severity: 'high',
+    },
+    {
+      id: '2',
+      title: 'Weather Update',
+      description: 'Severe weather warning in your area',
+      timestamp: new Date().toLocaleString(),
+      severity: 'medium',
+    },
+  ]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Update filtered alerts when base alerts change
-  useEffect(() => {
-    if (filteredAlerts.length === 0 || !filteredAlerts.some(fa => alerts.some(a => a.id === fa.id))) {
-      setFilteredAlerts(alerts);
-    }
-  }, [alerts, filteredAlerts]);
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    // Simulate refresh
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 1000);
+  };
 
-  const handleFilteredAlertsChange = useCallback((newFilteredAlerts: Alert[]) => {
-    setFilteredAlerts(newFilteredAlerts);
-  }, []);
+  const handleAlertPress = (alert: AlertItem) => {
+    navigation.navigate('AlertDetails', { alert });
+  };
 
-  const handleAlertPress = useCallback((alert: Alert) => {
-    // Navigate directly to details screen without popup
-    navigation.navigate('AlertDetails', { incidentId: alert.id });
-  }, [navigation]);
-
-  const handleSignOut = useCallback(async () => {
-    try {
-      await signOut();
-      navigation.replace('SignIn');
-    } catch (error) {
-      console.error('Sign out error:', error);
-      ReactAlert.alert('Error', 'Failed to sign out. Please try again.');
-    }
-  }, [signOut, navigation]);
-
-  const handleTestCrash = useCallback(() => {
-    // Test crash functionality (like Android menu action)
-    ReactAlert.alert(
-      'Test Crash',
-      'This would trigger a test crash in production',
-      [{ text: 'OK' }]
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: () => navigation.replace('SignIn'),
+        },
+      ]
     );
-  }, []);
+  };
 
-  const renderAlert = useCallback(({ item }: { item: Alert }) => (
-    <AlertItem alert={item} onPress={handleAlertPress} />
-  ), [handleAlertPress]);
+  const handleSettings = () => {
+    navigation.navigate('Settings');
+  };
 
-  const renderEmptyState = useMemo(() => (
+  const renderAlert = ({ item }: { item: AlertItem }) => (
+    <TouchableOpacity
+      style={[
+        styles.alertItem,
+        item.severity === 'high' && styles.highSeverity,
+        item.severity === 'medium' && styles.mediumSeverity,
+      ]}
+      onPress={() => handleAlertPress(item)}
+    >
+      <View style={styles.alertContent}>
+        <Text style={styles.alertTitle}>{item.title}</Text>
+        <Text style={styles.alertDescription}>{item.description}</Text>
+        <Text style={styles.alertTimestamp}>{item.timestamp}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>
-        {error ? 'Failed to load alerts' : 'No alerts yet'}
-      </Text>
-      {error && (
-        <TouchableOpacity onPress={refreshAlerts} style={styles.retryButton}>
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
-      )}
+      <Text style={styles.emptyText}>No alerts available</Text>
     </View>
-  ), [error, refreshAlerts]);
-
-  const keyExtractor = useCallback((item: Alert) => item.id, []);
-
-  const refreshControl = useMemo(() => (
-    <RefreshControl
-      refreshing={isLoading}
-      onRefresh={refreshAlerts}
-      tintColor="#1976d2"
-      colors={['#1976d2']}
-    />
-  ), [isLoading, refreshAlerts]);
+  );
 
   return (
     <View style={styles.container}>
-      {/* Header/Toolbar (like MaterialToolbar) */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>EMU Alerts</Text>
-        <View style={styles.headerActions}>
-          <TouchableOpacity onPress={handleTestCrash} style={styles.menuButton}>
-            <Text style={styles.menuButtonText}>Test</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleSignOut} style={styles.menuButton}>
-            <Text style={styles.menuButtonText}>Sign Out</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <HeaderMenu
+        title="EMU Alerts"
+        onSettingsPress={handleSettings}
+        onSignOutPress={handleSignOut}
+      />
 
-      {/* Search and Filters */}
-      {alerts.length > 0 && (
-        <AlertFilters
-          alerts={alerts}
-          onFilteredAlertsChange={handleFilteredAlertsChange}
-        />
-      )}
-
-      {/* Alerts List (like RecyclerView) */}
       <FlatList
-        data={filteredAlerts}
+        data={alerts}
         renderItem={renderAlert}
-        keyExtractor={keyExtractor}
-        ListEmptyComponent={!isLoading ? renderEmptyState : null}
-        contentContainerStyle={filteredAlerts.length === 0 ? styles.emptyListContainer : styles.listContainer}
-        showsVerticalScrollIndicator={true}
-        refreshControl={refreshControl}
-        maxToRenderPerBatch={10}
-        windowSize={10}
-        removeClippedSubviews={true}
-        getItemLayout={(data, index) => ({
-          length: 80, // Approximate item height
-          offset: 80 * index,
-          index,
-        })}
+        keyExtractor={(item) => item.id}
+        ListEmptyComponent={renderEmptyState}
+        contentContainerStyle={alerts.length === 0 ? styles.emptyListContainer : styles.listContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor="#1976d2"
+            colors={['#1976d2']}
+          />
+        }
       />
     </View>
   );
@@ -136,41 +127,49 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#1976d2',
-    paddingTop: 44, // Safe area for iOS
-    paddingBottom: 12,
-    paddingHorizontal: 16,
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  menuButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  menuButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '500',
-  },
   listContainer: {
-    paddingTop: 16,
-    paddingBottom: 20,
+    padding: 16,
   },
   emptyListContainer: {
     flex: 1,
+    padding: 16,
+  },
+  alertItem: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    borderLeftWidth: 4,
+    borderLeftColor: '#4caf50',
+  },
+  highSeverity: {
+    borderLeftColor: '#f44336',
+  },
+  mediumSeverity: {
+    borderLeftColor: '#ff9800',
+  },
+  alertContent: {
+    flex: 1,
+  },
+  alertTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
+  alertDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+  },
+  alertTimestamp: {
+    fontSize: 12,
+    color: '#999',
   },
   emptyContainer: {
     flex: 1,
@@ -180,18 +179,6 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: '#666',
-    marginBottom: 16,
     textAlign: 'center',
-  },
-  retryButton: {
-    backgroundColor: '#1976d2',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
   },
 });

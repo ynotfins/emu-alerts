@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,8 +7,8 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
-import { useAuth } from '../hooks/useAuth';
 
 interface SignInScreenProps {
   navigation: any;
@@ -17,29 +17,22 @@ interface SignInScreenProps {
 export default function SignInScreen({ navigation }: SignInScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { user, isLoading, error, signIn, clearError } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    // Check if user is already signed in
-    if (user) {
-      navigation.replace('Main');
+  const handleSignIn = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter both email and password');
+      return;
     }
-  }, [user, navigation]);
 
-  const handleSignIn = useCallback(async () => {
-    clearError();
-    await signIn(email, password);
-  }, [email, password, signIn, clearError]);
-
-  const handleEmailChange = useCallback((text: string) => {
-    setEmail(text);
-    if (error) clearError();
-  }, [error, clearError]);
-
-  const handlePasswordChange = useCallback((text: string) => {
-    setPassword(text);
-    if (error) clearError();
-  }, [error, clearError]);
+    setIsLoading(true);
+    
+    // Simulate authentication
+    setTimeout(() => {
+      setIsLoading(false);
+      navigation.replace('Main');
+    }, 1000);
+  };
 
   return (
     <KeyboardAvoidingView 
@@ -54,7 +47,7 @@ export default function SignInScreen({ navigation }: SignInScreenProps) {
             style={styles.input}
             placeholder="Email"
             value={email}
-            onChangeText={handleEmailChange}
+            onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
@@ -67,7 +60,7 @@ export default function SignInScreen({ navigation }: SignInScreenProps) {
             style={styles.input}
             placeholder="Password"
             value={password}
-            onChangeText={handlePasswordChange}
+            onChangeText={setPassword}
             secureTextEntry
             autoCorrect={false}
             editable={!isLoading}
@@ -83,10 +76,6 @@ export default function SignInScreen({ navigation }: SignInScreenProps) {
             {isLoading ? 'Signing In...' : 'Sign In'}
           </Text>
         </TouchableOpacity>
-
-        {error ? (
-          <Text style={styles.errorText}>{error}</Text>
-        ) : null}
       </View>
     </KeyboardAvoidingView>
   );
@@ -135,11 +124,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
-  },
-  errorText: {
-    color: '#d32f2f',
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 8,
   },
 });
