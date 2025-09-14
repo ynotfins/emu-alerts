@@ -1,145 +1,83 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
-import { useAuth } from '../hooks/useAuth';
+import React, { useState } from "react";
+import { View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform, Alert } from "react-native";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../lib/firebase"; // <— NOTE: lib/firebase, not firebase/config
+import GradientButton from "../components/GradientButton";
+import { colors, spacing } from "../theme/tokens";
 
-interface SignInScreenProps {
-  navigation: any;
-}
+const isEmail = (v: string) => /\S+@\S+\.\S+/.test(v);
 
-export default function SignInScreen({ navigation }: SignInScreenProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const { user, isLoading, error, signIn, clearError } = useAuth();
+export default function SignInScreen({ navigation }: any) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    // Check if user is already signed in
-    if (user) {
-      navigation.replace('Main');
+  const handleSignIn = async () => {
+    setError(null);
+    if (!isEmail(email)) return setError("Enter a valid email.");
+    if (password.length < 6) return setError("Password must be at least 6 characters.");
+    if (loading) return;
+
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+      navigation.replace("Main");
+    } catch (e: any) {
+      console.log("SIGNIN ERROR", e?.code, e?.message);
+      const map: Record<string, string> = {
+        "auth/invalid-credential": "Invalid email or password.",
+        "auth/user-not-found": "No account found for that email.",
+        "auth/wrong-password": "Invalid email or password.",
+        "auth/too-many-requests": "Too many attempts. Try again later.",
+        "auth/network-request-failed": "Network error. Check your connection.",
+      };
+      setError(map[e?.code] ?? "Sign-in failed. Check your credentials and network.");
+      // Optional visual ping so you always see *something* happen
+      if (!map[e?.code]) Alert.alert("Sign in failed", e?.message ?? "Unknown error");
+    } finally {
+      setLoading(false);
     }
-  }, [user, navigation]);
-
-  const handleSignIn = useCallback(async () => {
-    clearError();
-    await signIn(email, password);
-  }, [email, password, signIn, clearError]);
-
-  const handleEmailChange = useCallback((text: string) => {
-    setEmail(text);
-    if (error) clearError();
-  }, [error, clearError]);
-
-  const handlePasswordChange = useCallback((text: string) => {
-    setPassword(text);
-    if (error) clearError();
-  }, [error, clearError]);
+  };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <View style={styles.content}>
+    <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <View style={styles.container}>
         <Text style={styles.title}>EMU Alerts</Text>
-        
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={email}
-            onChangeText={handleEmailChange}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            editable={!isLoading}
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            value={password}
-            onChangeText={handlePasswordChange}
-            secureTextEntry
-            autoCorrect={false}
-            editable={!isLoading}
-          />
-        </View>
-
-        <TouchableOpacity
-          style={[styles.signInButton, isLoading && styles.signInButtonDisabled]}
+        <TextInput
+          placeholder="Email"
+          autoCapitalize="none"
+          keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
+          style={styles.input}
+        />
+        <TextInput
+          placeholder="Password"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+          style={styles.input}
+        />
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+        <GradientButton
+          title={loading ? "Signing in..." : "Sign In"}
           onPress={handleSignIn}
-          disabled={isLoading}
-        >
-          <Text style={styles.signInButtonText}>
-            {isLoading ? 'Signing In...' : 'Sign In'}
-          </Text>
-        </TouchableOpacity>
-
-        {error ? (
-          <Text style={styles.errorText}>{error}</Text>
-        ) : null}
+          disabled={loading}
+          style={{ marginTop: spacing.md }}
+        />
       </View>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 24,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 32,
-    color: '#1976d2',
-  },
-  inputContainer: {
-    marginBottom: 16,
-  },
+  root: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, padding: spacing.lg, justifyContent: "center" },
+  title: { fontSize: 28, fontWeight: "800", color: colors.text, textAlign: "center", marginBottom: spacing.xl },
   input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 16,
-    fontSize: 16,
-    backgroundColor: '#f9f9f9',
+    borderWidth: 1, borderColor: colors.border, borderRadius: 12,
+    paddingHorizontal: spacing.md, paddingVertical: 12, marginBottom: spacing.md, backgroundColor: "#fff",
   },
-  signInButton: {
-    backgroundColor: '#1976d2',
-    padding: 16,
-    borderRadius: 8,
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  signInButtonDisabled: {
-    backgroundColor: '#ccc',
-  },
-  signInButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  errorText: {
-    color: '#d32f2f',
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 8,
-  },
+  error: { color: "#DC2626", marginTop: 6, textAlign: "center" },
 });
