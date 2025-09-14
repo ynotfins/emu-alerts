@@ -16,13 +16,27 @@ export default function App() {
       <StatusBar style="light" backgroundColor="#1976d2" />
       <Stack.Navigator 
         initialRouteName="SignIn"
-        screenOptions={{
-          headerShown: false, // We're implementing custom headers
-        }}
       >
-        <Stack.Screen name="SignIn" component={SignInScreen} />
-        <Stack.Screen name="Main" component={MainScreen} />
-        <Stack.Screen name="AlertDetails" component={AlertDetailsScreen} />
+        <Stack.Screen 
+          name="SignIn" 
+          component={SignInScreen} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="Main" 
+          component={MainScreen} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="AlertDetails" 
+          component={AlertDetailsScreen} 
+          options={{ 
+            title: 'Alert Details',
+            headerStyle: { backgroundColor: '#1976d2' },
+            headerTintColor: '#fff',
+            headerTitleStyle: { fontWeight: 'bold' }
+          }} 
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

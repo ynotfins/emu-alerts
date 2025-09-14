@@ -5,7 +5,7 @@ import {
   onAuthStateChanged,
   User 
 } from 'firebase/auth';
-import { auth } from '../firebase/config';
+import { auth } from '../lib/firebase';
 
 interface UseAuthReturn {
   user: User | null;
