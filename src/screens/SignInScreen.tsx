@@ -1,14 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
-import { useAuth } from '../hooks/useAuth';
+import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../lib/firebase';
+import GradientButton from '../components/GradientButton';
 
 interface SignInScreenProps {
   navigation: any;
@@ -17,29 +19,61 @@ interface SignInScreenProps {
 export default function SignInScreen({ navigation }: SignInScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { user, isLoading, error, signIn, clearError } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     // Check if user is already signed in
-    if (user) {
-      navigation.replace('Main');
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        navigation.replace('Main');
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
+  const handleSignIn = async () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert('Error', 'Please enter both email and password');
+      return;
     }
-  }, [user, navigation]);
 
-  const handleSignIn = useCallback(async () => {
-    clearError();
-    await signIn(email, password);
-  }, [email, password, signIn, clearError]);
-
-  const handleEmailChange = useCallback((text: string) => {
-    setEmail(text);
-    if (error) clearError();
-  }, [error, clearError]);
-
-  const handlePasswordChange = useCallback((text: string) => {
-    setPassword(text);
-    if (error) clearError();
-  }, [error, clearError]);
+    setIsLoading(true);
+    
+    try {
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+      // Navigation will be handled by onAuthStateChanged
+    } catch (error: any) {
+      let errorMessage = 'An error occurred while signing in';
+      
+      switch (error.code) {
+        case 'auth/invalid-email':
+          errorMessage = 'Invalid email address';
+          break;
+        case 'auth/user-disabled':
+          errorMessage = 'This account has been disabled';
+          break;
+        case 'auth/user-not-found':
+          errorMessage = 'No account found with this email';
+          break;
+        case 'auth/wrong-password':
+          errorMessage = 'Incorrect password';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Too many failed attempts. Please try again later';
+          break;
+        case 'auth/network-request-failed':
+          errorMessage = 'Network error. Please check your connection';
+          break;
+        default:
+          errorMessage = error.message || 'Failed to sign in';
+      }
+      
+      Alert.alert('Sign In Failed', errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView 
@@ -48,17 +82,19 @@ export default function SignInScreen({ navigation }: SignInScreenProps) {
     >
       <View style={styles.content}>
         <Text style={styles.title}>EMU Alerts</Text>
+        <Text style={styles.subtitle}>Sign in to receive emergency notifications</Text>
         
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
             placeholder="Email"
             value={email}
-            onChangeText={handleEmailChange}
+            onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
             editable={!isLoading}
+            placeholderTextColor="#999"
           />
         </View>
 
@@ -67,26 +103,20 @@ export default function SignInScreen({ navigation }: SignInScreenProps) {
             style={styles.input}
             placeholder="Password"
             value={password}
-            onChangeText={handlePasswordChange}
+            onChangeText={setPassword}
             secureTextEntry
             autoCorrect={false}
             editable={!isLoading}
+            placeholderTextColor="#999"
           />
         </View>
 
-        <TouchableOpacity
-          style={[styles.signInButton, isLoading && styles.signInButtonDisabled]}
+        <GradientButton
+          title={isLoading ? 'Signing In...' : 'Sign In'}
           onPress={handleSignIn}
           disabled={isLoading}
-        >
-          <Text style={styles.signInButtonText}>
-            {isLoading ? 'Signing In...' : 'Sign In'}
-          </Text>
-        </TouchableOpacity>
-
-        {error ? (
-          <Text style={styles.errorText}>{error}</Text>
-        ) : null}
+          style={styles.signInButton}
+        />
       </View>
     </KeyboardAvoidingView>
   );
@@ -95,7 +125,7 @@ export default function SignInScreen({ navigation }: SignInScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f5f5f5',
   },
   content: {
     flex: 1,
@@ -106,8 +136,15 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 8,
     color: '#1976d2',
+  },
+  subtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 40,
+    color: '#666',
+    lineHeight: 22,
   },
   inputContainer: {
     marginBottom: 16,
@@ -115,31 +152,17 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   signInButton: {
-    backgroundColor: '#1976d2',
-    padding: 16,
-    borderRadius: 8,
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  signInButtonDisabled: {
-    backgroundColor: '#ccc',
-  },
-  signInButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  errorText: {
-    color: '#d32f2f',
-    fontSize: 14,
-    textAlign: 'center',
     marginTop: 8,
   },
 });
