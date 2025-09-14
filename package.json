@@ -21,12 +21,12 @@
     "firebase": "^12.1.0",
     "react": "19.0.0",
     "react-native": "0.79.6",
-
     "react-native-safe-area-context": "^5.6.1",
     "react-native-screens": "^4.15.2",
     "react-dom": "19.0.0",
     "react-native-web": "^0.20.0",
-    "@expo/metro-runtime": "~5.0.4"
+    "@expo/metro-runtime": "~5.0.4",
+    "expo-linear-gradient": "~14.1.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
